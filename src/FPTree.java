@@ -3,6 +3,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.TreeMap;
 
 public class FPTree {
@@ -32,6 +33,7 @@ public class FPTree {
 		System.out.println(originData.toString());
 		System.out.println(itemTable.toString());
 		buildTree();
+		System.out.println(root);
 	}
 	
 	private void readData() throws IOException {
@@ -89,12 +91,32 @@ public class FPTree {
 	
 	private void buildTree(){
 		root = new FPNode();
-		root.setParent(null);
 		desireData.forEach((ID, itemList)->{
-			itemList.forEach(item->{
-				
-			});
+			buildChilds(root, itemList);
 		});
+	}
+	
+	private void buildChilds(FPNode root, List<itemTableElement> itemList){
+		itemTableElement item = itemList.get(0);
+		if(root.childs.containsKey(item.itemName)){
+			FPNode itemNode = root.childs.get(item.itemName);
+			itemNode.occurCount++;
+			List<itemTableElement> nextList = itemList.subList(itemList.indexOf(item)+1, itemList.size());
+			if(nextList.isEmpty())
+				return;
+			buildChilds(itemNode, nextList);
+		}
+		else{
+			FPNode t = new FPNode();
+			t.itemName = item.itemName;
+			t.occurCount++;
+			t.parent = root;
+			root.childs.put(item.itemName,t);
+			List<itemTableElement> nextList = itemList.subList(itemList.indexOf(item)+1, itemList.size());
+			if(nextList.isEmpty())
+				return;
+			buildChilds(t, nextList);
+		}
 	}
 	
 	public void setSupportCount(int supportCount){
@@ -134,53 +156,18 @@ public class FPTree {
 	}
 	
 	private class FPNode{
-		private FPNode parent;
-		private FPNode sameIDSideNode;
-		private HashMap<String,FPNode> childs;
-		private int occurCount;
-		private String ID;
+		FPNode parent;
+		FPNode sameIDSideNode;
+		HashMap<String,FPNode> childs;
+		int occurCount;
+		String itemName;
 		
-		public void setParent(FPNode parent){
-			this.parent = parent;
-		}
-		
-		public FPNode getParent(){
-			return parent;
-		}
-		
-		public void setSameIDSideNode(FPNode sameIDSideNode){
-			this.sameIDSideNode = sameIDSideNode;
-		}
-		
-		public FPNode getSameIDSideNode(){
-			return sameIDSideNode;
-		}
-		
-		public FPNode getChild(String ID){
-			if(childs.containsKey(ID))
-				return childs.get(ID);
-			else
-				return null;
-		}
-		
-		public void addChild(FPNode child){
-			childs.put(child.ID, child);
-		}
-		
-		public void setOccurCount(int occurCount){
-			this.occurCount = occurCount;
-		}
-		
-		public int getOccurCount(){
-			return occurCount;
-		}
-		
-		public void setID(String ID){
-			this.ID = ID;
-		}
-		
-		public String getID(){
-			return ID;
+		FPNode(){
+			parent = null;
+			sameIDSideNode = null;
+			childs = new HashMap<>();
+			occurCount = 0;
+			itemName = null;
 		}
 	}
 }
