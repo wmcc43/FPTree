@@ -3,14 +3,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.TreeMap;
 
 public class FPTree {
 	TreeMap<String, LinkedList<String>> originData;
 	TreeMap<String, LinkedList<itemTableElement>> desireData;
-	LinkedList<itemTableElement> itemTable;
-	HashMap<String, LinkedList<FPNode>> headTable;
+	HashMap<String, FPNode> headTable;
 	FPNode root;
 	int supportCount;
 	String dataPath;
@@ -28,12 +26,11 @@ public class FPTree {
 		catch(IOException e){
 			e.printStackTrace();
 		}
-		System.out.println(originData.toString());
 		eliminateLowerCountItem();
-		System.out.println(originData.toString());
-		System.out.println(itemTable.toString());
 		buildTree();
-		System.out.println(root);
+		buildHeadTable();
+		originData=null;
+		desireData=null;
 	}
 	
 	private void readData() throws IOException {
@@ -48,6 +45,8 @@ public class FPTree {
 			originData.put(s[0], item);
 			temp=bf.readLine();
 		}
+		bf.close();
+		input.close();
 	}
 	
 	private void eliminateLowerCountItem(){
@@ -78,44 +77,61 @@ public class FPTree {
 			t.sort(null);
 			desireData.put(ID, t);
 		});
-		
-		System.out.println(desireData);
-		
-		itemTable = new LinkedList<>();
-		temp.forEach((item, element) -> {
-			if(element.count>=supportCount)
-				itemTable.add(element);
-		});
-		itemTable.sort(null);
 	}
 	
 	private void buildTree(){
 		root = new FPNode();
+		root.childs = new HashMap<>();
 		desireData.forEach((ID, itemList)->{
 			buildChilds(root, itemList);
 		});
 	}
 	
-	private void buildChilds(FPNode root, List<itemTableElement> itemList){
-		itemTableElement item = itemList.get(0);
-		if(root.childs.containsKey(item.itemName)){
-			FPNode itemNode = root.childs.get(item.itemName);
+	private void buildChilds(FPNode root, LinkedList<itemTableElement> itemList){
+		itemTableElement item = itemList.remove(0);
+		FPNode itemNode;
+		if(root.childs!=null && root.childs.containsKey(item.itemName)){
+			itemNode = root.childs.get(item.itemName);
 			itemNode.occurCount++;
-			List<itemTableElement> nextList = itemList.subList(itemList.indexOf(item)+1, itemList.size());
-			if(nextList.isEmpty())
+			if(itemList.isEmpty())
 				return;
-			buildChilds(itemNode, nextList);
+			buildChilds(itemNode, itemList);
 		}
 		else{
-			FPNode t = new FPNode();
-			t.itemName = item.itemName;
-			t.occurCount++;
-			t.parent = root;
-			root.childs.put(item.itemName,t);
-			List<itemTableElement> nextList = itemList.subList(itemList.indexOf(item)+1, itemList.size());
-			if(nextList.isEmpty())
+			itemNode = new FPNode();
+			itemNode.itemName = item.itemName;
+			itemNode.occurCount++;
+			itemNode.parent = root;
+			if(root.childs==null)
+				root.childs = new HashMap<>();
+			root.childs.put(item.itemName,itemNode);
+			if(itemList.isEmpty())
 				return;
-			buildChilds(t, nextList);
+			buildChilds(itemNode, itemList);
+		}
+	}
+	
+	private void buildHeadTable(){
+		root.childs.forEach((itemName, FPNode)->{
+			traverseTree(FPNode);
+		});
+	}
+	
+	private void traverseTree(FPNode fpnode){
+		if(headTable.containsKey(fpnode.itemName)){
+			FPNode t = headTable.get(fpnode.itemName);
+			while(t.sameIDSideNode!=null){
+				t = t.sameIDSideNode;
+			}
+			t.sameIDSideNode=fpnode;
+		}
+		else{
+			headTable.put(fpnode.itemName, fpnode);
+		}
+		if(fpnode.childs!=null){
+			fpnode.childs.forEach((itemName, FPNode)->{
+				traverseTree(FPNode);
+			});
 		}
 	}
 	
@@ -165,9 +181,13 @@ public class FPTree {
 		FPNode(){
 			parent = null;
 			sameIDSideNode = null;
-			childs = new HashMap<>();
 			occurCount = 0;
 			itemName = null;
+		}
+		
+		@Override
+		public String toString(){
+			return "["+itemName+":"+occurCount+"]";
 		}
 	}
 }
