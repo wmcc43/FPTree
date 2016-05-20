@@ -167,9 +167,7 @@ public class FPTree {
 			int chooser = 1;
 			while(chooser < maxCombination){
 				if((chooser & i) != 0){
-					int flag = (int)Math.sqrt((double)chooser);
-					if(chooser==1)
-						flag=0;
+					int flag = (int)(Math.log((double)chooser)/Math.log(2.0));
 					patternName = patternName + items[flag] + ",";
 				}
 				chooser = chooser << 1;
