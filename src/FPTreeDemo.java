@@ -7,6 +7,7 @@ public class FPTreeDemo {
 		tree.setSplitter("\t");
 		tree.setSupportCount(2);
 		tree.startBuildTree();
+		tree.showFrequentPattern();
 	}
 
 }

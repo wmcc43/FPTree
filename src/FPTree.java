@@ -9,6 +9,7 @@ public class FPTree {
 	TreeMap<String, LinkedList<String>> originData;
 	TreeMap<String, LinkedList<itemTableElement>> desireData;
 	HashMap<String, FPNode> headTable;
+	HashMap<String, HashMap<String, Integer>> pattern;
 	FPNode root;
 	int supportCount;
 	String dataPath;
@@ -31,6 +32,7 @@ public class FPTree {
 		buildHeadTable();
 		originData=null;
 		desireData=null;
+		generatePattern();
 	}
 	
 	private void readData() throws IOException {
@@ -135,6 +137,55 @@ public class FPTree {
 		}
 	}
 	
+	private void generatePattern(){
+		pattern = new HashMap<String, HashMap<String, Integer>>();
+		headTable.forEach((item, fpnode)->{
+			FPNode t = fpnode;
+			FPNode current = fpnode;
+			HashMap<String, Integer> itemPattern = new HashMap<>();
+			while(t!=null){
+				String path = new String();
+				while(t.parent!=root){
+					path = path + t.parent.itemName+",";
+					if(t.parent.parent==root){
+						itemPattern = minePattern(path, current, itemPattern);
+					}
+					t = t.parent;
+				}
+				t = current.sameIDSideNode;
+				current = t;
+			}
+			pattern.put(item, itemPattern);
+		});
+	}
+	
+	private HashMap<String, Integer> minePattern(String path, FPNode current, HashMap<String, Integer> itemPattern){
+		String items[] = path.split(",");
+		int maxCombination = (int)Math.pow(2.0, (double)(items.length));
+		for(int i=1; i < maxCombination; i++){
+			String patternName = new String();
+			int chooser = 1;
+			while(chooser < maxCombination){
+				if((chooser & i) != 0){
+					int flag = (int)Math.sqrt((double)chooser);
+					if(chooser==1)
+						flag=0;
+					patternName = patternName + items[flag] + ",";
+				}
+				chooser = chooser << 1;
+			}
+			patternName = patternName + current.itemName;
+			if(!itemPattern.containsKey(patternName))
+				itemPattern.put(patternName, current.occurCount);
+			else{
+				int count = itemPattern.get(patternName);
+				count = count + current.occurCount;
+				itemPattern.put(patternName, count);
+			}
+		}
+		return itemPattern;
+	}
+	
 	public void setSupportCount(int supportCount){
 		this.supportCount = supportCount;
 	}
@@ -145,6 +196,20 @@ public class FPTree {
 	
 	public void setSplitter(String splitter){
 		this.splitter = splitter;
+	}
+	
+	public void showFrequentPattern(){
+		pattern.forEach((itemName, p)->{
+			if(!p.isEmpty()){
+				System.out.print(itemName+"{");
+				p.forEach((name,count)->{
+					if(count >= supportCount){
+						System.out.print("<"+name+":"+count+">");
+					}
+				});
+				System.out.println("}");
+			}
+		});
 	}
 	
 	private class itemTableElement implements Comparable<itemTableElement>{
