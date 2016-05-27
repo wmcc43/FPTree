@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.TreeMap;
@@ -9,7 +10,7 @@ public class FPTree {
 	TreeMap<String, LinkedList<String>> originData;
 	TreeMap<String, LinkedList<itemTableElement>> desireData;
 	HashMap<String, FPNode> headTable;
-	HashMap<String, HashMap<String, Integer>> pattern;
+	HashMap<String, HashMap<String, FPNodeCount>> pattern;
 	FPNode root;
 	int supportCount;
 	String dataPath;
@@ -138,15 +139,33 @@ public class FPTree {
 	}
 	
 	private void generatePattern(){
-		pattern = new HashMap<String, HashMap<String, Integer>>();
+		pattern = new HashMap<String, HashMap<String, FPNodeCount>>();
 		headTable.forEach((item, fpnode)->{
 			FPNode t = fpnode;
 			FPNode current = fpnode;
-			HashMap<String, Integer> itemPattern = new HashMap<>();
+			HashMap<String, FPNodeCount> itemPattern = new HashMap<>();
+			HashMap<FPNode, FPNodeCount> conditionalFPTree = new HashMap<>();
 			while(t!=null){
-				String path = new String();
 				while(t.parent!=root){
-					path = path + t.parent.itemName+",";
+					if(conditionalFPTree.containsKey(t.parent))
+						conditionalFPTree.get(t.parent).count += current.occurCount;
+					else
+						conditionalFPTree.put(t.parent, new FPNodeCount(t.parent, current.occurCount));
+					t = t.parent;
+				}
+				t = current.sameIDSideNode;
+				current = t;
+			}
+			
+			t = fpnode;
+			current = fpnode;
+			ArrayList<FPNodeCount> path = new ArrayList<>();
+			while(t!=null){
+				path.removeAll(path);
+				while(t.parent!=root){
+					FPNodeCount count = conditionalFPTree.get(t.parent);
+					if(count.count>=supportCount)
+						path.add(count);
 					if(t.parent.parent==root){
 						itemPattern = minePattern(path, current, itemPattern);
 					}
@@ -159,26 +178,24 @@ public class FPTree {
 		});
 	}
 	
-	private HashMap<String, Integer> minePattern(String path, FPNode current, HashMap<String, Integer> itemPattern){
-		String items[] = path.split(",");
-		int maxCombination = (int)Math.pow(2.0, (double)(items.length));
+	private HashMap<String, FPNodeCount> minePattern(ArrayList<FPNodeCount> path, FPNode current, HashMap<String, FPNodeCount> itemPattern){
+		int maxCombination = (int)Math.pow(2.0, (double)(path.size()));
 		for(int i=1; i < maxCombination; i++){
-			String patternName = new String();
+			String patternName = "";
 			int chooser = 1;
 			while(chooser < maxCombination){
 				if((chooser & i) != 0){
 					int flag = (int)(Math.log((double)chooser)/Math.log(2.0));
-					patternName = patternName + items[flag] + ",";
+					patternName = patternName + path.get(flag).fpnode.itemName + ",";
 				}
 				chooser = chooser << 1;
 			}
 			patternName = patternName + current.itemName;
 			if(!itemPattern.containsKey(patternName))
-				itemPattern.put(patternName, current.occurCount);
+				itemPattern.put(patternName, new FPNodeCount(current, current.occurCount));
 			else{
-				int count = itemPattern.get(patternName);
-				count = count + current.occurCount;
-				itemPattern.put(patternName, count);
+				FPNodeCount count = itemPattern.get(patternName);
+				count.count += current.occurCount;
 			}
 		}
 		return itemPattern;
@@ -200,11 +217,7 @@ public class FPTree {
 		pattern.forEach((itemName, p)->{
 			if(!p.isEmpty()){
 				System.out.print(itemName+"{");
-				p.forEach((name,count)->{
-					if(count >= supportCount){
-						System.out.print("<"+name+":"+count+">");
-					}
-				});
+				p.forEach((name,count) -> System.out.print("<"+name+":"+count.count+">"));
 				System.out.println("}");
 			}
 		});
@@ -231,6 +244,16 @@ public class FPTree {
 		@Override
 		public String toString(){
 			return "["+itemName+":"+count+"]";
+		}
+	}
+	
+	private class FPNodeCount{
+		FPNode fpnode;
+		int count;
+		
+		public FPNodeCount(FPNode fpnode, int count){
+			this.fpnode = fpnode;
+			this.count = count;
 		}
 	}
 	
