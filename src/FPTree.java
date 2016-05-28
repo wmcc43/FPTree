@@ -78,7 +78,8 @@ public class FPTree {
 			LinkedList<itemTableElement> t = new LinkedList<>();
 			itemList.forEach(item -> t.add(new itemTableElement(item, temp.get(item).count)));
 			t.sort(null);
-			desireData.put(ID, t);
+			if(!itemList.isEmpty())
+				desireData.put(ID, t);
 		});
 	}
 	
@@ -179,18 +180,25 @@ public class FPTree {
 	}
 	
 	private HashMap<String, FPNodeCount> minePattern(ArrayList<FPNodeCount> path, FPNode current, HashMap<String, FPNodeCount> itemPattern){
-		int maxCombination = (int)Math.pow(2.0, (double)(path.size()));
-		for(int i=1; i < maxCombination; i++){
-			String patternName = "";
-			int chooser = 1;
+		long maxCombination = (long)Math.pow(2.0, (double)(path.size()));
+		long chooser;
+		StringBuilder patternNameBuilder = new StringBuilder();
+		String patternName;
+		for(long i=1; i < maxCombination; i++){
+			patternNameBuilder.delete(0, patternNameBuilder.length());
+			chooser = 1;
 			while(chooser < maxCombination){
 				if((chooser & i) != 0){
 					int flag = (int)(Math.log((double)chooser)/Math.log(2.0));
-					patternName = patternName + path.get(flag).fpnode.itemName + ",";
+					patternNameBuilder.append(path.get(flag).fpnode.itemName).append(",");
 				}
 				chooser = chooser << 1;
+				if(chooser <= 0){
+					System.out.println("chooser = "+chooser);
+				}
 			}
-			patternName = patternName + current.itemName;
+			patternNameBuilder.append(current.itemName);
+			patternName = patternNameBuilder.toString();
 			if(!itemPattern.containsKey(patternName))
 				itemPattern.put(patternName, new FPNodeCount(current, current.occurCount));
 			else{
@@ -217,7 +225,7 @@ public class FPTree {
 		pattern.forEach((itemName, p)->{
 			if(!p.isEmpty()){
 				System.out.print(itemName+"{");
-				p.forEach((name,count) -> System.out.print("<"+name+":"+count.count+">"));
+				p.forEach((name,count) -> System.out.print("<"+name+":"+count.count+"> "));
 				System.out.println("}");
 			}
 		});

@@ -2,11 +2,15 @@
 public class FPTreeDemo {
 
 	public static void main(String[] args) {
+		if(args.length!=3){
+			System.out.println("Usage:\n\tjava FPTreeDemo FILEPATH SPLITER(regex) MINSUPPORT");
+			System.exit(-1);
+		}
 		long start = System.currentTimeMillis();
 		FPTree tree = new FPTree();
-		tree.setDataPath("./t2.txt");
-		tree.setSplitter("[:,]+");
-		tree.setSupportCount(15);
+		tree.setDataPath(args[0]);
+		tree.setSplitter(args[1]);
+		tree.setSupportCount(Integer.parseInt(args[2]));
 		tree.startBuildTree();
 		tree.showFrequentPattern();
 		long end = System.currentTimeMillis();
