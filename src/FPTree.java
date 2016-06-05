@@ -12,6 +12,7 @@ public class FPTree {
 	HashMap<String, FPNode> headTable;
 	HashMap<String, HashMap<String, FPNodeCount>> pattern;
 	FPNode root;
+	double minSupport;
 	int supportCount;
 	String dataPath;
 	String splitter;
@@ -53,6 +54,8 @@ public class FPTree {
 	}
 	
 	private void eliminateLowerCountItem(){
+		System.out.println("Table Rows count : "+originData.size());
+		supportCount = (int)(minSupport * originData.size());
 		TreeMap<String, itemTableElement> temp = new TreeMap<>();
 		originData.forEach((ID,itemList)->{
 			itemList.forEach(item->{
@@ -168,7 +171,7 @@ public class FPTree {
 					if(count.count>=supportCount)
 						path.add(count);
 					if(t.parent.parent==root){
-						itemPattern = minePattern(path, current, itemPattern);
+						minePattern(path, current, itemPattern);
 					}
 					t = t.parent;
 				}
@@ -179,7 +182,7 @@ public class FPTree {
 		});
 	}
 	
-	private HashMap<String, FPNodeCount> minePattern(ArrayList<FPNodeCount> path, FPNode current, HashMap<String, FPNodeCount> itemPattern){
+	private void minePattern(ArrayList<FPNodeCount> path, FPNode current, HashMap<String, FPNodeCount> itemPattern){
 		long maxCombination = (long)Math.pow(2.0, (double)(path.size()));
 		long chooser;
 		StringBuilder patternNameBuilder = new StringBuilder();
@@ -206,11 +209,10 @@ public class FPTree {
 				count.count += current.occurCount;
 			}
 		}
-		return itemPattern;
 	}
 	
-	public void setSupportCount(int supportCount){
-		this.supportCount = supportCount;
+	public void setMinSupport(double minSupport){
+		this.minSupport = minSupport;
 	}
 	
 	public void setDataPath(String dataPath){
@@ -224,9 +226,8 @@ public class FPTree {
 	public void showFrequentPattern(){
 		pattern.forEach((itemName, p)->{
 			if(!p.isEmpty()){
-				System.out.print(itemName+"{");
-				p.forEach((name,count) -> System.out.print("<"+name+":"+count.count+"> "));
-				System.out.println("}");
+				System.out.println(itemName+":");
+				p.forEach((name,count) -> System.out.println("\t<"+name+":"+count.count+"> "));
 			}
 		});
 	}
